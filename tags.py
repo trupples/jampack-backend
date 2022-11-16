@@ -13,7 +13,7 @@ def route_get_tags():
 
 def route_get_tag(id):
 	cur = db_connection.cursor()
-	cur.execute('select id, name, balance from Tags where id = ?', [id])
+	cur.execute('select id, name, balance from Tags where id = %s', [id])
 
 	tag = cur.fetchone()
 
@@ -33,7 +33,7 @@ def route_top_up(id):
 		return jsonify({'error': 'Invalid amount'})
 
 	cur = db_connection.cursor()
-	cur.execute('update Tags set balance = balance + ? where id = ?', [amount, id])
+	cur.execute('update Tags set balance = balance + %s where id = %s', [amount, id])
 	cur.close()
 	db_connection.commit()
 
@@ -50,15 +50,15 @@ def route_checkout():
 	total = 0
 	cur = db_connection.cursor()
 
-	cur.execute('insert into Receipts(buyer) values (?)', [user_id]);
+	cur.execute('insert into Receipts(buyer) values (%s)', [user_id]);
 	receipt_id = cur.lastrowid
 
 	for iid, qty in zip(iids, qtys):
-		cur.execute('select cost from Items where id = ?', [iid])
+		cur.execute('select cost from Items where id = %s', [iid])
 		item = cur.fetchone()
 		total += qty * item[0]
 
-	cur.execute('select balance from Tags where id = ?', [user_id])
+	cur.execute('select balance from Tags where id = %s', [user_id])
 	balance = cur.fetchone()[0]
 
 	if total > balance:
@@ -67,9 +67,9 @@ def route_checkout():
 		return jsonify({'error': 'Insufficient funds'})
 
 	for iid, qty in zip(iids, qtys):
-		cur.execute('insert into ReceiptItems(receipt_id, item_id, quantity) values (?, ?, ?)', [receipt_id, iid, qty])
+		cur.execute('insert into ReceiptItems(receipt_id, item_id, quantity) values (%s, %s, %s)', [receipt_id, iid, qty])
 
-	cur.execute('update Tags set balance = balance - ? where id = ?', [total, user_id])
+	cur.execute('update Tags set balance = balance - %s where id = %s', [total, user_id])
 
 	cur.close()
 	db_connection.commit()

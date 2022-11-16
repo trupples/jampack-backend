@@ -13,7 +13,7 @@ def route_get_items():
 
 def route_get_item(id):
 	cur = db_connection.cursor()
-	cur.execute('select id, name, cost from Items where id = ? order by cost asc, name asc, id asc', [id])
+	cur.execute('select id, name, cost from Items where id = %s order by cost asc, name asc, id asc', [id])
 
 	(id, name, cost) = cur.fetchone()
 
@@ -21,7 +21,8 @@ def route_get_item(id):
 
 def route_get_item_image(id):
 	cur = db_connection.cursor()
-	cur.execute('select image from Items where id = ?', [id])
+	
+	cur.execute('select image from Items where id = %s', [id])
 
 	image = cur.fetchone()
 
