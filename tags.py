@@ -35,15 +35,20 @@ def route_get_tag(id):
 	return jsonify({'id': id, 'name': name, 'balance': balance})
 
 def route_top_up(id):
-	try:
-		amount = int(request.form['amount'])
-		if amount < 0:
-			raise ValueError()
-	except:
-		return jsonify({'error': 'Invalid amount'})
+	if 'amount' not in request.form:
+		return jsonify({'error': 'Invalid request'})
 
 	db_connection = get_db_connection()
 	cur = db_connection.cursor()
+	amount = int(request.form['amount'])
+
+	"""try:
+		
+		if amount < 0:
+			raise ValueError()
+	except:
+		return jsonify({'error': 'Invalid amount'})"""
+
 	cur.execute('update Tags set balance = balance + %s where id = %s', [amount, id])
 	cur.close()
 	db_connection.commit()
