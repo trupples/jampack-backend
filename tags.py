@@ -1,7 +1,8 @@
-from database import db_connection
+from database import get_db_connection
 from flask import jsonify, request
 
 def route_get_tags():
+	db_connection = get_db_connection()
 	cur = db_connection.cursor()
 	cur.execute('select id, name, balance from Tags')
 
@@ -9,18 +10,27 @@ def route_get_tags():
 	for (id, name, balance) in cur:
 		tags.append({'id': id, 'name': name, 'balance': balance})
 
+	cur.close()
+	db_connection.close()
+
 	return jsonify({'tags': tags})
 
 def route_get_tag(id):
+	db_connection = get_db_connection()
 	cur = db_connection.cursor()
 	cur.execute('select id, name, balance from Tags where id = %s', [id])
 
 	tag = cur.fetchone()
 
 	if tag is None:
+		cur.close()
+		db_connection.close()
 		return jsonify({})
 
 	(id, name, balance) = tag
+
+	cur.close()
+	db_connection.close()
 
 	return jsonify({'id': id, 'name': name, 'balance': balance})
 
@@ -32,10 +42,12 @@ def route_top_up(id):
 	except:
 		return jsonify({'error': 'Invalid amount'})
 
+	db_connection = get_db_connection()
 	cur = db_connection.cursor()
 	cur.execute('update Tags set balance = balance + %s where id = %s', [amount, id])
 	cur.close()
 	db_connection.commit()
+	db_connection.close()
 
 	return jsonify({'message': 'ok'})
 
@@ -48,6 +60,7 @@ def route_checkout():
 		return jsonify({'error': 'Invalid item list'})
 
 	total = 0
+	db_connection = get_db_connection()
 	cur = db_connection.cursor()
 
 	cur.execute('insert into Receipts(buyer) values (%s)', [user_id]);
@@ -64,6 +77,7 @@ def route_checkout():
 	if total > balance:
 		cur.close()
 		db_connection.rollback()
+		db_connection.close()
 		return jsonify({'error': 'Insufficient funds'})
 
 	for iid, qty in zip(iids, qtys):
@@ -73,5 +87,6 @@ def route_checkout():
 
 	cur.close()
 	db_connection.commit()
+	db_connection.close()
 
 	return jsonify({'message': 'ok'})

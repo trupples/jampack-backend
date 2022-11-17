@@ -6,8 +6,6 @@ import os
 import time
 import pyotp
 
-from database import db_connection
-
 class AuthScope(IntFlag):
 	NONE = 0
 	SELL = auto()
