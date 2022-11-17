@@ -49,6 +49,14 @@ def route_top_up(id):
 	except:
 		return jsonify({'error': 'Invalid amount'})"""
 
+	cur.execute('select balance from Tags where id = %s', [user_id])
+	balance = cur.fetchone()[0]
+
+	if balance + amount < 0:
+		cur.close()
+		db_connection.close()
+		return jsonify({'error': 'Subtracting too many tokens!'})
+
 	cur.execute('update Tags set balance = balance + %s where id = %s', [amount, id])
 	cur.close()
 	db_connection.commit()
