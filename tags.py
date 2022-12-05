@@ -1,5 +1,6 @@
 from database import get_db_connection
 from flask import jsonify, request
+from log import log
 
 def route_get_tags():
 	db_connection = get_db_connection()
@@ -42,18 +43,22 @@ def route_top_up(id):
 	cur = db_connection.cursor()
 	amount = int(request.form['amount'])
 
+	log(f'Top up {id=} {amount=}')
+
 	try:
 		cur.execute('update Tags set balance = balance + %s where id = %s', [amount, id])
 	except:
 		cur.close()
 		db_connection.commit()
 		db_connection.close()
+		log(f'Top up {id=} {amount=} failed')
 		return jsonify({'error': 'An error occured'})
 
 	cur.close()
 	db_connection.commit()
 	db_connection.close()
 
+	log(f'Top up {id=} {amount=} succeeded')
 	return jsonify({'message': 'ok'})
 
 def route_checkout():
@@ -76,6 +81,7 @@ def route_checkout():
 		item = cur.fetchone()
 		total += qty * item[0]
 
+	log(f'Checkout {user_id=} {total=}')
 	cur.execute('select balance from Tags where id = %s', [user_id])
 	balance = cur.fetchone()[0]
 
@@ -83,7 +89,7 @@ def route_checkout():
 		cur.close()
 		db_connection.rollback()
 		db_connection.close()
-		return jsonify({'error': 'Insufficient funds'})
+		log(f'Checkout {user_id=} {total=} Insufficient funds')
 
 	for iid, qty in zip(iids, qtys):
 		cur.execute('insert into ReceiptItems(receipt_id, item_id, quantity) values (%s, %s, %s)', [receipt_id, iid, qty])
@@ -94,4 +100,5 @@ def route_checkout():
 	db_connection.commit()
 	db_connection.close()
 
-	return jsonify({'message': 'ok'})
+	log(f'Checkout {user_id=} {total=} Sold')
+	return jsonify({'message': 'ok', 'prev_balance': prev_balance, 'current_balance': prev_balance-total})

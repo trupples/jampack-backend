@@ -2,6 +2,7 @@ drop table if exists ReceiptItems;
 drop table if exists Receipts;
 drop table if exists Items;
 drop table if exists Tags;
+drop table if exists Logs;
 
 create table Tags (
 	id integer primary key auto_increment,
@@ -34,4 +35,10 @@ create table ReceiptItems (
 	quantity integer not null default 1,
 
 	primary key (receipt_id, item_id)
+);
+
+create table Logs (
+	id integer primary key auto_increment,
+	timestamp datetime default(current_timestamp),
+	what text
 );

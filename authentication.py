@@ -1,6 +1,7 @@
 from flask import jsonify, session, request
 from functools import wraps
 from enum import IntFlag, auto
+from log import log
 
 import os
 import time
@@ -48,11 +49,16 @@ def authenticated(handler, required_scope):
 	return wrapped
 
 def route_authenticate():
+	ua = request.headers['User-Agent']
+	
+	log(f'Authenticate {ua=}')
+
 	for (totp, authscope) in totps.items():
 		if totp.verify(request.form['totp']):
 			session['exp'] = int(time.time() + 3600)
 			session['p'] = int(authscope)
-			print('Authenticated as ' + repr(authscope))
-			return jsonify({'message': 'Authenticated as ' + repr(authscope)})
+			log(f'Authenticated {ua=} as {authscope}')
+			return jsonify({'message': 'Authenticated as ' + repr(authscope), 'authLevel': int(authscope)})
 	else:
-		return jsonify({'error': 'Unauthenticated, invalid code'})
+		log(f'Authenticate {ua=} failed')
+		return jsonify({'error': 'Unauthenticated, invalid code', 'authLevel': 0})
