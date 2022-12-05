@@ -82,14 +82,16 @@ def route_checkout():
 		total += qty * item[0]
 
 	log(f'Checkout {user_id=} {total=}')
-	cur.execute('select balance from Tags where id = %s', [user_id])
-	balance = cur.fetchone()[0]
 
-	if total > balance:
+	cur.execute('select balance from Tags where id = %s', [user_id])
+	prev_balance = cur.fetchone()[0]
+
+	if total > prev_balance:
 		cur.close()
 		db_connection.rollback()
 		db_connection.close()
 		log(f'Checkout {user_id=} {total=} Insufficient funds')
+		return jsonify({'error': 'Insufficient funds', 'prev_balance': prev_balance, 'current_balance': prev_balance})
 
 	for iid, qty in zip(iids, qtys):
 		cur.execute('insert into ReceiptItems(receipt_id, item_id, quantity) values (%s, %s, %s)', [receipt_id, iid, qty])

@@ -7,7 +7,7 @@ drop table if exists Logs;
 create table Tags (
 	id integer primary key auto_increment,
 	name varchar(64),
-	balance integer not null,
+	balance integer not null default(0),
 
 	check (balance >= 0)
 );

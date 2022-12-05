@@ -9,19 +9,19 @@ import pyotp
 
 class AuthScope(IntFlag):
 	NONE = 0
-	SELL = auto()
-	ITEMS_VIEW = auto()
-	ITEMS_EDIT = auto() # Relevant functionality unimplemented
-	TAGS_VIEW = auto()
-	TAGS_TOPUP = auto()
-	TAGS_EDIT = auto() # Relevant functionality unimplemented
-
-	SELLER = SELL | ITEMS_VIEW | TAGS_VIEW
-	MANAGER = SELL | ITEMS_VIEW | TAGS_VIEW | ITEMS_EDIT | TAGS_TOPUP | TAGS_EDIT
+	SELL = 1
+	ITEMS_VIEW = 2
+	ITEMS_EDIT = 4 # Relevant functionality unimplemented
+	TAGS_VIEW = 8
+	TAGS_TOPUP = 16
+	TAGS_INIT = 32
+	TAGS_EDIT = 64 # Relevant functionality unimplemented
+	BAR =   SELL | ITEMS_VIEW | TAGS_VIEW
+	TOPUP =        ITEMS_VIEW | TAGS_VIEW | TAGS_INIT | TAGS_TOPUP
 
 totps = {
-	pyotp.TOTP(os.environ.get('TOTP_SELLER_SECRET')): AuthScope.SELLER,
-	pyotp.TOTP(os.environ.get('TOTP_MANAGER_SECRET')): AuthScope.MANAGER,
+	pyotp.TOTP(os.environ.get('TOTP_BAR_SECRET')): AuthScope.BAR,
+	pyotp.TOTP(os.environ.get('TOTP_TOPUP_SECRET')): AuthScope.TOPUP,
 }
 
 def authenticated(handler, required_scope):
@@ -54,7 +54,7 @@ def route_authenticate():
 	log(f'Authenticate {ua=}')
 
 	for (totp, authscope) in totps.items():
-		if totp.verify(request.form['totp']):
+		if totp.verify(request.form['totp'], valid_window=1):
 			session['exp'] = int(time.time() + 3600)
 			session['p'] = int(authscope)
 			log(f'Authenticated {ua=} as {authscope}')
